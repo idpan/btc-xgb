@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "data": {
+    "direction": "up",
+    "confidence_level": 0.65,
+    "target_date": "2026-09-24",
+    "previous_close": 77490.12,
+    "previous_close_time": "2026-09-22T00:00:00Z",
+    "next_close_time": "2026-09-24T00:00:00Z"
+  }
+}

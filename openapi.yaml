@@ -1,0 +1,404 @@
+openapi: 3.0.3
+info:
+  title: BitcoinPredict-V2 API
+  description: >
+    API spec disusun berdasarkan seluruh fetch/endpoint yang sudah dipanggil
+    oleh frontend (BTC-PREDICT-FRONTEND-ONLY) — baik yang sudah mengarah ke
+    backend asli (localhost:5000/api/...) maupun yang masih fetch file statis
+    di /public (data-lake.json, prediction_history.json, prediction_result.json,
+    trees-meta.json, anatomi-config.json, trees/*.svg). Endpoint kelompok kedua
+    ditulis di sini dengan prefix /data-lake dan /anatomi supaya frontend tinggal
+    ganti base URL fetch-nya tanpa ubah bentuk data.
+
+    Catatan: source code saat ini punya 2 host berbeda untuk backend
+    (http://localhost:5000 di config.js, UserManagement.jsx, Login.jsx — vs
+    http://127.0.0.1:5000 di PredictionSection.jsx). Sebaiknya semua fetch
+    diarahkan lewat satu konstanta API_BASE_URL dari config.js.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:5000/api
+    description: Local dev server (samakan dengan API_BASE_URL di src/config/config.js)
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Prediction
+  - name: DataLake
+  - name: AnatomiModel
+
+security:
+  - bearerAuth: []
+
+paths:
+  /login:
+    post:
+      tags: [Auth]
+      summary: Login user/admin
+      description: Dipanggil dari src/pages/Login.jsx saat USE_MOCK_DATA=false.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login berhasil atau gagal (status dibedakan lewat field `status`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Daftar semua user
+      description: Dipanggil dari src/pages/UserManagement.jsx (admin only).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /create-user:
+    post:
+      tags: [Users]
+      summary: Buat user baru
+      description: Dipanggil dari src/pages/UserManagement.jsx (admin only).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                role: { type: string, enum: [admin, user] }
+      responses:
+        '200':
+          description: User berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  message: { type: string }
+        '400':
+          description: Gagal (mis. email sudah dipakai)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /delete-user:
+    delete:
+      tags: [Users]
+      summary: Hapus user
+      description: Dipanggil dari src/pages/UserManagement.jsx (admin only).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: User berhasil dihapus
+        '400':
+          description: Gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /predict/latest:
+    get:
+      tags: [Prediction]
+      summary: Prediksi arah closing berikutnya (live, dari model)
+      description: >
+        Dipanggil dari src/components/PredictionSection.jsx (tombol "Jalankan
+        Prediksi") dan bentuknya sama dengan public/prediction_result.json.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  data: { $ref: '#/components/schemas/PredictionResult' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /prediction-history:
+    get:
+      tags: [Prediction]
+      summary: Riwayat prediksi harian
+      description: >
+        Dipanggil dari src/pages/History.jsx dan src/pages/Dashboard.jsx.
+        Saat ini masih fetch file statis /prediction_history.json — endpoint
+        ini menggantikannya dengan bentuk data yang identik.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PredictionHistoryItem' }
+
+  /data-lake:
+    get:
+      tags: [DataLake]
+      summary: Seluruh baris OHLCV + hasil model (train & test set)
+      description: >
+        Dipanggil dari src/pages/DataLakeExplorer.jsx. Saat ini fetch file
+        statis /data-lake.json — endpoint ini menggantikannya.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DataLakeRow' }
+
+  /data-lake/{tanggal}:
+    get:
+      tags: [DataLake]
+      summary: Detail satu baris (untuk drill-down ke Explainer)
+      description: >
+        Belum ada fetch eksplisit di source saat ini — DataLakeFlow (App.jsx)
+        baru meneruskan {tanggal, closing_price} ke XGBoostExplainerDashboard2,
+        sisanya masih sampleData hardcoded. Endpoint ini disiapkan supaya
+        Explainer bisa fetch detail asli (termasuk fitur_21 / SHAP) per tanggal
+        alih-alih data contoh.
+      parameters:
+        - name: tanggal
+          in: path
+          required: true
+          schema: { type: string, format: date, example: "2026-09-24" }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLakeRow'
+        '404':
+          description: Tanggal tidak ditemukan
+
+  /anatomi/config:
+    get:
+      tags: [AnatomiModel]
+      summary: Konfigurasi model + base_score + feature_importance
+      description: >
+        Dipanggil dari src/pages/AnatomiModel.jsx. Saat ini fetch file statis
+        /anatomi-config.json — endpoint ini menggantikannya. base_score dan
+        feature_importance masih placeholder di data saat ini
+        (feature_importance_is_placeholder: true) sampai diisi nilai asli dari
+        baseline.get_params()["base_score"] dan baseline.feature_importances_.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnatomiConfig' }
+
+  /anatomi/trees-meta:
+    get:
+      tags: [AnatomiModel]
+      summary: Metadata 100 pohon (node/leaf/root/batch)
+      description: >
+        Dipanggil dari src/pages/AnatomiModel.jsx. Saat ini fetch file statis
+        /trees-meta.json — endpoint ini menggantikannya.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TreeMeta' }
+
+  /anatomi/trees/{id}:
+    get:
+      tags: [AnatomiModel]
+      summary: Gambar asli satu pohon (output xgboost.to_graphviz())
+      description: >
+        Dipanggil dari modal TreeModal di src/pages/AnatomiModel.jsx. Saat ini
+        <img> mengarah ke file statis /trees/tree_XXX.svg — endpoint ini
+        menggantikannya, id 1-100 dipetakan ke tree_{id:03d}.svg.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: File SVG
+          content:
+            image/svg+xml:
+              schema: { type: string, format: binary }
+        '404':
+          description: id di luar 1-100
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Dikirim sebagai `Authorization: Bearer <token>`, token disimpan di localStorage("token") — lihat src/utils/auth.js
+
+  responses:
+    Unauthorized:
+      description: Token tidak ada / tidak valid
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status: { type: string, example: error }
+        message: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    LoginResponse:
+      type: object
+      properties:
+        status: { type: string, enum: [success, error] }
+        access_token: { type: string, description: "JWT, hanya ada jika status=success" }
+        user:
+          type: object
+          properties:
+            email: { type: string }
+            role: { type: string, enum: [admin, user] }
+        message: { type: string, description: "Hanya ada jika status=error" }
+
+    User:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        role: { type: string, enum: [admin, user] }
+
+    PredictionResult:
+      type: object
+      description: Bentuk sama dengan public/prediction_result.json
+      properties:
+        direction: { type: string, enum: [up, down, UP, DOWN] }
+        confidence_level: { type: number, format: float, example: 0.65 }
+        target_date: { type: string, format: date }
+        previous_close: { type: number, format: float }
+        previous_close_time: { type: string, format: date-time }
+        next_close_time: { type: string, format: date-time }
+
+    PredictionHistoryItem:
+      type: object
+      description: Bentuk sama dengan public/prediction_history.json
+      properties:
+        date: { type: string, example: "22-09-2026", description: "format DD-MM-YYYY" }
+        prediction_direction: { type: string, enum: [up, down] }
+        actual_direction: { type: string, enum: [up, down, pending] }
+        prediction_status: { type: string, enum: [correct, wrong, pending] }
+        closing_price: { type: number, format: float }
+        next_closing_price: { type: number, format: float }
+
+    FeatureContribution:
+      type: object
+      description: Satu baris SHAP contribution, bagian dari fitur_21 di DataLakeRow
+      properties:
+        fitur: { type: string, example: RSI }
+        nilai: { type: string, example: "42.500000", description: "nilai fitur mentah, dikirim sebagai string" }
+        kontribusi: { type: number, format: float, description: "kontribusi SHAP dalam log-odds space" }
+        efek: { type: string, enum: [positif, negatif] }
+
+    DataLakeRow:
+      type: object
+      description: Bentuk sama dengan satu elemen public/data-lake.json
+      properties:
+        tanggal: { type: string, format: date }
+        open: { type: number, format: float }
+        high: { type: number, format: float }
+        low: { type: number, format: float }
+        close: { type: number, format: float }
+        volume: { type: number, format: float }
+        split: { type: string, enum: [train, test] }
+        prediksi: { type: string, enum: [UP, DOWN] }
+        probabilitas_up: { type: number, format: float, description: "0-100" }
+        actual_label: { type: string, enum: [UP, DOWN] }
+        is_correct: { type: boolean }
+        base_score_log_odds: { type: number, format: float }
+        sum_leaf_scores: { type: number, format: float }
+        total_log_odds: { type: number, format: float }
+        fitur_21:
+          type: array
+          items: { $ref: '#/components/schemas/FeatureContribution' }
+
+    ModelConfig:
+      type: object
+      properties:
+        n_estimators: { type: integer, example: 100 }
+        learning_rate: { type: number, format: float, example: 0.05 }
+        max_depth: { type: integer, example: 5 }
+        objective: { type: string, example: "binary:logistic" }
+        random_state: { type: integer, example: 42 }
+
+    FeatureImportanceItem:
+      type: object
+      properties:
+        name: { type: string }
+        score:
+          type: number
+          format: float
+          nullable: true
+          description: "null selama feature_importance_is_placeholder=true"
+
+    AnatomiConfig:
+      type: object
+      properties:
+        model_config: { $ref: '#/components/schemas/ModelConfig' }
+        base_score: { type: number, format: float, example: 0.5 }
+        feature_importance_is_placeholder: { type: boolean }
+        feature_importance:
+          type: array
+          items: { $ref: '#/components/schemas/FeatureImportanceItem' }
+
+    TreeMeta:
+      type: object
+      description: Satu elemen public/trees-meta.json
+      properties:
+        id: { type: integer, minimum: 1, maximum: 100 }
+        nodes: { type: integer, description: "total node (internal + leaf), dari <ellipse> di SVG asli" }
+        leaves: { type: integer, description: "jumlah node berlabel leaf=" }
+        root: { type: string, description: "nama fitur pada split pertama (root)", example: ATR }
+        batch: { type: integer, minimum: 1, maximum: 10, description: "ceil(id / 10), urutan boosting" }
