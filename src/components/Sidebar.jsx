@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { logout, getUserRole } from "../utils/auth";
 
@@ -5,95 +6,232 @@ export default function Sidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const role = getUserRole();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const navItems = [
-    { id: "dashboard", label: "Dashboard", path: "/dashboard", icon: "fa-solid fa-chart-line" },
-    { id: "history", label: "History", path: "/history", icon: "fa-solid fa-clock-rotate-left" },
-    { id: "data-lake", label: "Data Lake", path: "/data-lake", icon: "fa-solid fa-database" },
-    { id: "explainer", label: "Explainer", path: "/XGBoostExplainerDashboard", icon: "fa-solid fa-brain" },
-    { id: "pred-run-page", label: "Run Pred", path: "/pred-run-page", icon: "fa-solid fa-play" },
-    { id: "explainer2", label: "Explainer 2", path: "/XGBoostExplainerDashboard2", icon: "fa-solid fa-chart-pie" },
-    { id: "anatomi-model", label: "Anatomi Model", path: "/anatomi-model", icon: "fa-solid fa-cubes" },
+  const sections = [
+    {
+      title: null, // Top item
+      items: [
+        {
+          id: "dashboard",
+          label: "Dashboard",
+          path: "/dashboard",
+          icon: "fa-solid fa-house",
+        },
+        {
+          id: "today-prediction",
+          label: "Prediksi Hari Ini",
+          path: "/prediction-today",
+          icon: "fa-solid fa-calendar-check",
+        },
+        {
+          id: "history-prediction",
+          label: "Riwayat Prediksi",
+          path: "/prediction-history",
+          icon: "fa-solid fa-clock-rotate-left",
+        },
+        {
+          id: "test-prediction",
+          label: "Tes Prediksi",
+          path: "/prediction-test",
+          icon: "fa-solid fa-play",
+        },
+        {
+          id: "anatomi-model",
+          label: "Spesifikasi Model",
+          path: "/anatomi-model",
+          icon: "fa-solid fa-cubes",
+        },
+      ],
+    },
+    // {
+    //   title: "MASTER DATA",
+    //   items: [
+    //     {
+    //       id: "feature",
+    //       label: "Data Feature",
+    //       path: "/feature",
+    //       icon: "fa-solid fa-table-cells",
+    //       adminOnly: true,
+    //     },
+    //     {
+    //       id: "history",
+    //       label: "History Data",
+    //       path: "/history",
+    //       icon: "fa-solid fa-clock-rotate-left",
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "PREDIKSI HARI INI",
+    //   adminOnly: true,
+    //   items: [
+    //     {
+    //       id: "today-calculation",
+    //       label: "Rincian Prediksi",
+    //       path: "/today-prediction/calculation",
+    //       icon: "fa-solid fa-calculator",
+    //     },
+    //     {
+    //       id: "today-feature",
+    //       label: "Feature Hari Ini",
+    //       path: "/today-prediction/feature",
+    //       icon: "fa-solid fa-list-check",
+    //     },
+    //     {
+    //       id: "today-trees",
+    //       label: "Pohon Prediksi",
+    //       path: "/today-prediction/trees",
+    //       icon: "fa-solid fa-network-wired",
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "MODEL & INFERENSI",
+    //   adminOnly: true,
+    //   items: [
+    //     {
+    //       id: "pred-run-page",
+    //       label: "Uji Inferensi",
+    //       path: "/pred-run-page",
+    //       icon: "fa-solid fa-play",
+    //     },
+    //     {
+    //       id: "anatomi-model",
+    //       label: "Spesifikasi Model",
+    //       path: "/anatomi-model",
+    //       icon: "fa-solid fa-cubes",
+    //     },
+    //     {
+    //       id: "trees",
+    //       label: "Pohon Keputusan",
+    //       path: "/trees",
+    //       icon: "fa-solid fa-diagram-project",
+    //     },
+    //   ],
+    // },
   ];
 
   if (role === "admin") {
-    navItems.push({ id: "users", label: "Users", path: "/users", icon: "fa-solid fa-users" });
+    sections.push({
+      items: [
+        {
+          id: "users",
+          label: "Manajemen User",
+          path: "/users",
+          icon: "fa-solid fa-user-gear",
+        },
+      ],
+    });
   }
 
+  // Filter sections & items berdasarkan role
+  const visibleSections = sections
+    .filter((section) => !section.adminOnly || role === "admin")
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.adminOnly || role === "admin",
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+
   return (
-    <aside className="w-64 flex-shrink-0 h-screen sticky top-0 bg-white border-r border-slate-200/80 shadow-sm flex flex-col justify-between p-4 z-40 select-none overflow-y-auto">
-      <div className="space-y-6">
+    <aside
+      className={`h-screen sticky top-0 flex-shrink-0 transition-all duration-300 z-40 select-none flex flex-col justify-between text-white shadow-xl ${
+        isCollapsed ? "w-20" : "w-64"
+      }`}
+      style={{
+        background: "linear-gradient(180deg, #4e73df 10%, #224abe 100%)",
+      }}
+    >
+      <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
         {/* Brand Header */}
-        <div className="flex items-center gap-3 px-2 py-3 border-b border-slate-100">
-          <div className="bg-blue-600 p-2.5 rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center text-white">
-            <i className="fa-brands fa-bitcoin text-xl"></i>
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/15">
+          <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white shadow-inner flex-shrink-0">
+            <i className="fa-solid fa-database text-xl"></i>
           </div>
-          <div>
-            <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight uppercase">
-              BTC-Predict
-            </h1>
-            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block mt-0.5">
-              v2.0 Standalone
-            </span>
-          </div>
+          {!isCollapsed && (
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base font-extrabold tracking-wider text-white uppercase leading-tight truncate">
+                BTC PREDICT
+              </h1>
+              <span className="text-[10px] font-semibold text-blue-100 opacity-80 block truncate">
+                SPK XGBoost v2.0
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Navigation Section */}
-        <div>
-          <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            Main Menu
-          </p>
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive =
-                currentPath === item.path ||
-                (item.path !== "/dashboard" && currentPath.startsWith(item.path));
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
-                    isActive
-                      ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20"
-                      : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
-                  }`}
-                >
-                  <i
-                    className={`${item.icon} text-base w-5 text-center ${
-                      isActive ? "text-white" : "text-slate-400"
-                    }`}
-                  ></i>
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+        {/* Navigation Sections */}
+        <div className="px-3 py-4 space-y-4 flex-1">
+          {visibleSections.map((section, idx) => (
+            <div key={idx}>
+              {section.title && !isCollapsed && (
+                <div className="px-3 text-[10px] font-extrabold text-white/50 uppercase tracking-wider mb-2 mt-2">
+                  {section.title}
+                </div>
+              )}
+              {section.title && isCollapsed && (
+                <div className="border-t border-white/15 my-2"></div>
+              )}
+              <nav className="space-y-1">
+                {section.items.map((item) => {
+                  const isActive =
+                    currentPath === item.path ||
+                    (item.path !== "/dashboard" && currentPath === item.path);
 
-      {/* User Footer / Logout */}
-      <div className="pt-4 border-t border-slate-100 space-y-3">
-        <div className="px-3 py-2 rounded-xl bg-slate-50 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">
-            {role === "admin" ? "AD" : "US"}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-800 truncate">
-              {role === "admin" ? "Administrator" : "User"}
-            </p>
-            <p className="text-[11px] text-slate-400 capitalize truncate">
-              {role || "Guest"}
-            </p>
-          </div>
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      title={isCollapsed ? item.label : undefined}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                        isActive
+                          ? "bg-white/20 text-white font-bold shadow-xs border-l-4 border-white"
+                          : "text-white/80 hover:bg-white/10 hover:text-white"
+                      } ${isCollapsed ? "justify-center px-0" : ""}`}
+                    >
+                      <i
+                        className={`${item.icon} text-base ${
+                          isCollapsed ? "w-auto text-lg" : "w-5 text-center"
+                        } ${isActive ? "text-white" : "text-white/70"}`}
+                      ></i>
+                      {!isCollapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
         </div>
 
-        <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 py-2.5 px-3 rounded-xl transition duration-200"
-        >
-          <i className="fa-solid fa-arrow-right-from-bracket"></i>
-          <span>Logout</span>
-        </button>
+        {/* Collapse Button */}
+        <div className="p-3 border-t border-white/15 flex items-center justify-between">
+          {!isCollapsed && (
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 py-1.5 px-3 rounded-lg transition"
+            >
+              <i className="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition shadow-xs mx-auto"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            <i
+              className={`fa-solid ${
+                isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
+              } text-xs`}
+            ></i>
+          </button>
+        </div>
       </div>
     </aside>
   );

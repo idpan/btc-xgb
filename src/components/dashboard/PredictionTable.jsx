@@ -1,3 +1,6 @@
+import { Eye } from "lucide-react";
+import { Link } from "react-router-dom";
+
 export const PredictionTable = ({ data = [] }) => {
   const getDirectionStyle = (dir) => {
     if (dir === "up") return "text-emerald-600";
@@ -19,29 +22,44 @@ export const PredictionTable = ({ data = [] }) => {
         })}`
       : "-";
 
-  const hasConfidence = data.some((item) => item.confidence_level !== undefined);
+  const hasConfidence = data.some(
+    (item) => item.confidence_level !== undefined,
+  );
 
   return (
-    <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden text-sm">
+    <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden text-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-left whitespace-nowrap">
-          <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-[#4e73df] text-white uppercase text-xs font-bold tracking-wider">
             <tr>
-              <th className="p-4">
+              <th className="p-3.5 border-r border-blue-400/40 last:border-r-0">
                 Tanggal
-                <span className="block text-[8px] font-normal lowercase opacity-60">
+                <span className="block text-[9px] font-normal lowercase opacity-80">
                   Acuan UTC
                 </span>
               </th>
-              <th className="p-4">Harga Closing</th>
-              <th className="p-4">Prediksi</th>
-              {hasConfidence && <th className="p-4 text-center">Confidence</th>}
-              <th className="p-4">Aktual</th>
-              <th className="p-4">Closing Berikutnya</th>
-              <th className="p-4">Hasil</th>
+              <th className="p-3.5 border-r border-blue-400/40 last:border-r-0">
+                Harga Closing
+              </th>
+              <th className="p-3.5 border-r border-blue-400/40 last:border-r-0">
+                Prediksi
+              </th>
+              {hasConfidence && (
+                <th className="p-3.5 text-center border-r border-blue-400/40 last:border-r-0">
+                  Confidence
+                </th>
+              )}
+              <th className="p-3.5 border-r border-blue-400/40 last:border-r-0">
+                Aktual
+              </th>
+              <th className="p-3.5 border-r border-blue-400/40 last:border-r-0">
+                Closing Berikutnya
+              </th>
+              <th className="p-3.5">Hasil</th>
+              <th className="p-3.5">Aksi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200 text-slate-700">
             {data.length === 0 ? (
               <tr>
                 <td
@@ -56,20 +74,22 @@ export const PredictionTable = ({ data = [] }) => {
               data.map((item, index) => (
                 <tr
                   key={index}
-                  className="hover:bg-slate-50/50 transition text-slate-700"
+                  className="hover:bg-blue-50/20 transition text-slate-700 border-b border-slate-200"
                 >
                   {/* Tanggal */}
-                  <td className="p-4 font-medium">{item.date}</td>
+                  <td className="p-3.5 border-r border-slate-200 font-medium">
+                    {item.date}
+                  </td>
 
                   {/* Closing Price */}
-                  <td className="p-4 font-semibold text-slate-800">
+                  <td className="p-3.5 border-r border-slate-200 font-semibold text-slate-800">
                     {formatCurrency(item.closing_price)}
                   </td>
 
                   {/* Prediksi */}
                   <td
-                    className={`p-4 font-bold uppercase ${getDirectionStyle(
-                      item.prediction_direction
+                    className={`p-3.5 border-r border-slate-200 font-bold uppercase ${getDirectionStyle(
+                      item.prediction_direction,
                     )}`}
                   >
                     <i
@@ -84,12 +104,12 @@ export const PredictionTable = ({ data = [] }) => {
 
                   {/* Confidence (Jika Ada) */}
                   {hasConfidence && (
-                    <td className="p-4 text-center">
+                    <td className="p-3.5 border-r border-slate-200 text-center">
                       {item.confidence_level !== undefined ? (
                         <>
                           <div className="w-20 bg-slate-200 h-1.5 rounded-full mx-auto overflow-hidden">
                             <div
-                              className="bg-blue-600 h-1.5 rounded-full"
+                              className="bg-[#4e73df] h-1.5 rounded-full"
                               style={{
                                 width: `${item.confidence_level * 100}%`,
                               }}
@@ -107,8 +127,8 @@ export const PredictionTable = ({ data = [] }) => {
 
                   {/* Aktual */}
                   <td
-                    className={`p-4 font-bold uppercase ${getDirectionStyle(
-                      item.actual_direction
+                    className={`p-3.5 border-r border-slate-200 font-bold uppercase ${getDirectionStyle(
+                      item.actual_direction,
                     )}`}
                   >
                     <i
@@ -116,23 +136,23 @@ export const PredictionTable = ({ data = [] }) => {
                         item.actual_direction === "up"
                           ? "fa-arrow-trend-up"
                           : item.actual_direction === "down"
-                          ? "fa-arrow-trend-down"
-                          : "fa-clock"
+                            ? "fa-arrow-trend-down"
+                            : "fa-clock"
                       } mr-2`}
                     ></i>
                     {item.actual_direction || "pending"}
                   </td>
 
                   {/* Next Closing Price */}
-                  <td className="p-4 font-semibold text-slate-800">
+                  <td className="p-3.5 border-r border-slate-200 font-semibold text-slate-800">
                     {formatCurrency(item.next_closing_price)}
                   </td>
 
                   {/* Hasil Status */}
-                  <td className="p-4">
+                  <td className="p-3.5">
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${getStatusStyle(
-                        item.prediction_status
+                        item.prediction_status,
                       )}`}
                     >
                       <i
@@ -140,16 +160,24 @@ export const PredictionTable = ({ data = [] }) => {
                           item.prediction_status === "correct"
                             ? "fa-check"
                             : item.prediction_status === "wrong"
-                            ? "fa-xmark"
-                            : "fa-spinner"
+                              ? "fa-xmark"
+                              : "fa-spinner"
                         } mr-1`}
                       ></i>
                       {item.prediction_status === "correct"
                         ? "Benar"
                         : item.prediction_status === "wrong"
-                        ? "Salah"
-                        : "Proses"}
+                          ? "Salah"
+                          : "Proses"}
                     </span>
+                  </td>
+                  <td className="p-3.5 border-r border-slate-200 font-semibold text-slate-800">
+                    <Link to="/prediction-test/hasil">
+                      <button className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-indigo text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+                        <Eye className="w-3.5 h-3.5" />
+                        Detail
+                      </button>
+                    </Link>
                   </td>
                 </tr>
               ))

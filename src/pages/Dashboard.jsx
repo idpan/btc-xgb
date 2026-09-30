@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import Tabs from "../components/ui/Tabs";
 
 export default function Dashboard() {
   const [historyData, setHistoryData] = useState([]);
@@ -8,7 +9,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   // State untuk Waktu & Countdown Realtime
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [targetTime, setTargetTime] = useState(null);
   const [acuanTime, setAcuanTime] = useState(null);
 
@@ -109,16 +114,25 @@ export default function Dashboard() {
   const recentHistory = historyData.slice(0, 5);
 
   const correctCount = recentHistory.filter(
-    (item) => item.prediction_status === "correct"
+    (item) => item.prediction_status === "correct",
   ).length;
   const wrongCount = recentHistory.filter(
-    (item) => item.prediction_status === "wrong"
+    (item) => item.prediction_status === "wrong",
   ).length;
 
   const isUp =
     latestPrediction?.direction === "up" ||
     latestPrediction?.prediction_direction === "up";
-
+  const tabData = [
+    { id: "tab1", label: "Tab 1", content: "Tab 1 content" },
+    { id: "tab2", label: "Tab 2", content: "Tab 2 content" },
+    {
+      id: "tab3",
+      label: "Tab 3",
+      content: <p className="text-emerald-600">Bisa juga JSX/Komponen lain!</p>,
+    },
+    { id: "tab4", label: "Tab 4", content: "Tab 4 content" },
+  ];
   return (
     <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center space-y-6">
       <div className="w-full max-w-5xl space-y-6">
@@ -164,9 +178,9 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-slate-500">
                     Closing berikutnya :
-                      <span className="font-semibold text-slate-700 ml-1">
-                    {formatDateWIB(targetTime)}
-                  </span>
+                    <span className="font-semibold text-slate-700 ml-1">
+                      {formatDateWIB(targetTime)}
+                    </span>
                   </span>
                 </div>
                 <div className="text-3xl font-bold text-slate-300 tracking-wider mb-2">
@@ -181,17 +195,15 @@ export default function Dashboard() {
               <div className="pt-4 border-t border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">
                   Closing berikutnya terjadi dalam
-                 
                 </p>
                 <p className="text-2xl font-extrabold text-slate-800 mb-1">
                   {timeLeft.hours} jam {timeLeft.minutes} menit
                 </p>
-                
               </div>
             </div>
           </div>
         </div>
-
+        <Tabs items={tabData} />
         {/* Tabel 5 Prediksi Terakhir */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -212,19 +224,29 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-100 font-medium">
-                  <th className="pb-3 font-normal">Tanggal (UTC)</th>
-                  <th className="pb-3 font-normal">Harga Closing</th>
-                  <th className="pb-3 font-normal">Prediksi</th>
-                  {recentHistory.some((item) => item.confidence_level !== undefined) && (
-                    <th className="pb-3 font-normal text-center">Probabilitas</th>
+                <tr className="bg-[#4e73df] text-white uppercase text-xs font-bold tracking-wider">
+                  <th className="p-3 border-r border-blue-400/40">
+                    Tanggal (UTC)
+                  </th>
+                  <th className="p-3 border-r border-blue-400/40">
+                    Harga Closing
+                  </th>
+                  <th className="p-3 border-r border-blue-400/40">Prediksi</th>
+                  {recentHistory.some(
+                    (item) => item.confidence_level !== undefined,
+                  ) && (
+                    <th className="p-3 text-center border-r border-blue-400/40">
+                      Probabilitas
+                    </th>
                   )}
-                  <th className="pb-3 font-normal">Aktual</th>
-                  <th className="pb-3 font-normal">Closing Berikutnya</th>
-                  <th className="pb-3 font-normal text-right">Hasil</th>
+                  <th className="p-3 border-r border-blue-400/40">Aktual</th>
+                  <th className="p-3 border-r border-blue-400/40">
+                    Closing Berikutnya
+                  </th>
+                  <th className="p-3 text-right">Hasil</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -253,7 +275,9 @@ export default function Dashboard() {
                         </span>
                       </td>
 
-                      {recentHistory.some((item) => item.confidence_level !== undefined) && (
+                      {recentHistory.some(
+                        (item) => item.confidence_level !== undefined,
+                      ) && (
                         <td className="py-3.5 text-center text-slate-600 font-medium">
                           {row.confidence_level !== undefined
                             ? `${Math.round(row.confidence_level * 100)}%`

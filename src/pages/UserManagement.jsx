@@ -171,10 +171,10 @@ export default function UserManagement() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-50">
-                <th className="px-8 py-5">User</th>
-                <th className="px-8 py-5">Peran (Role)</th>
-                <th className="px-8 py-5 text-right">Aksi</th>
+              <tr className="bg-[#4e73df] text-white text-xs uppercase font-bold tracking-wider">
+                <th className="px-8 py-3.5 border-r border-blue-400/40 last:border-r-0">User</th>
+                <th className="px-8 py-3.5 border-r border-blue-400/40 last:border-r-0">Peran (Role)</th>
+                <th className="px-8 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import TreeViewer from "../components/TreeViewer";
 import {
   TrendingUp,
   TrendingDown,
@@ -176,6 +177,7 @@ export default function XGBoostExplainerDashboard2({ data }) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedTreeIndex, setExpandedTreeIndex] = useState(null);
+  const [fullTree, setFullTree] = useState(null); // pohon yang dibuka di tampilan utuh
 
   const toggleTreeRow = (index) => {
     setExpandedTreeIndex(expandedTreeIndex === index ? null : index);
@@ -674,6 +676,13 @@ export default function XGBoostExplainerDashboard2({ data }) {
                                       {pohon.leaf_value.toFixed(6)}
                                     </span>
                                   </div>
+                                  <button
+                                    onClick={() => setFullTree(pohon)}
+                                    className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-200 hover:bg-indigo-50 px-2.5 py-1 rounded-lg transition-colors"
+                                  >
+                                    <GitCommit className="w-3.5 h-3.5" />
+                                    Lihat pohon utuh
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -714,6 +723,41 @@ export default function XGBoostExplainerDashboard2({ data }) {
               >
                 Tutup Modal
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OVERLAY: POHON UTUH (terpisah dari modal 100 pohon) */}
+      {fullTree && (
+        <div
+          className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={(e) => e.target === e.currentTarget && setFullTree(null)}
+        >
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Pohon #{fullTree.tree_index + 1} — Struktur Utuh
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Data hari ini berakhir di Leaf #{fullTree.leaf_id} (skor{" "}
+                  {fullTree.leaf_value >= 0 ? "+" : ""}
+                  {fullTree.leaf_value.toFixed(6)})
+                </p>
+              </div>
+              <button
+                onClick={() => setFullTree(null)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5">
+              <TreeViewer
+                treeIndex={fullTree.tree_index}
+                leafId={fullTree.leaf_id}
+              />
             </div>
           </div>
         </div>

@@ -4,22 +4,22 @@ const colorMap = {
   emerald: {
     bg: "bg-emerald-50",
     text: "text-emerald-600",
-    border: "border-emerald-200/60",
+    border: "border-l-4 border-l-emerald-500",
   },
   blue: {
     bg: "bg-blue-50",
-    text: "text-blue-600",
-    border: "border-blue-200/60",
+    text: "text-[#4e73df]",
+    border: "border-l-4 border-l-[#4e73df]",
   },
   indigo: {
     bg: "bg-indigo-50",
     text: "text-indigo-600",
-    border: "border-indigo-200/60",
+    border: "border-l-4 border-l-indigo-500",
   },
   amber: {
     bg: "bg-amber-50",
     text: "text-amber-600",
-    border: "border-amber-200/60",
+    border: "border-l-4 border-l-amber-500",
   },
 };
 
@@ -28,10 +28,10 @@ export function StatCard({ title, value, subtitle, icon: Icon, color = "blue" })
 
   return (
     <div
-      className={`bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between`}
+      className={`bg-white p-5 rounded-xl border border-slate-200/80 ${theme.border} shadow-xs hover:shadow-md transition flex flex-col justify-between`}
     >
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#4e73df]">
           {title}
         </span>
         {Icon && (
@@ -42,7 +42,7 @@ export function StatCard({ title, value, subtitle, icon: Icon, color = "blue" })
       </div>
 
       <div>
-        <div className="text-2xl font-black text-slate-900 tracking-tight">
+        <div className="text-2xl font-black text-slate-800 tracking-tight">
           {value}
         </div>
         {subtitle && (

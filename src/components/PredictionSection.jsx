@@ -1,234 +1,186 @@
-import React, { useState } from "react";
-import { getAuthToken } from "../utils/auth";
-import { LucideInfo, Zap } from "lucide-react";
-import { USE_MOCK_DATA } from "../config/config";
-import { LATEST_MOCK_PREDICTION } from "../data/mockData";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import Tabs from "../components/ui/Tabs";
 
-const GaugeChart = ({ value, show }) => {
-  const radius = 70;
-  const strokeWeight = 12;
-  const normalizedValue = value || 0;
-  const circumference = Math.PI * radius; // Half circle
-  const strokeDashoffset = circumference - normalizedValue * circumference;
+export default function PredictionSection() {
+  const [historyData, setHistoryData] = useState([]);
+  const [latestPrediction, setLatestPrediction] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const getColor = (v) => {
-    if (v < 0.55) return "#94a3b8"; // slate-400
-    if (v < 0.75) return "#f59e0b"; // amber-500
-    return "#10b981"; // emerald-500
-  };
+  // State untuk Waktu & Countdown Realtime
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [targetTime, setTargetTime] = useState(null);
+  const [acuanTime, setAcuanTime] = useState(null);
 
-  const getLabel = (v) => {
-    if (v < 0.55) return "Rendah";
-    if (v < 0.75) return "Cukup Stabil";
-    return "Sangat Kuat";
-  };
+  useEffect(() => {
+    // 1. Tentukan Waktu Closing Berikutnya (Pukul 07:00 WIB)
+    const now = new Date();
+    const target = new Date();
+    target.setHours(7, 0, 0, 0);
 
-  return (
-    <div className="relative flex flex-col items-center">
-      <svg width="180" height="110" viewBox="0 0 160 100">
-        {/* Background Arc */}
-        <path
-          d="M 10 90 A 70 70 0 0 1 150 90"
-          fill="none"
-          stroke="#f1f5f9"
-          strokeWidth={strokeWeight}
-          strokeLinecap="round"
-        />
-        {/* Progress Arc */}
-        <path
-          d="M 10 90 A 70 70 0 0 1 150 90"
-          fill="none"
-          stroke={getColor(normalizedValue)}
-          strokeWidth={strokeWeight}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          style={{
-            strokeDashoffset: show ? strokeDashoffset : circumference,
-            transition: "stroke-dashoffset 2s ease-out, stroke 0.5s ease",
-          }}
-        />
-        {/* Value Text */}
-        <text
-          x="80"
-          y="80"
-          textAnchor="middle"
-          className="text-2xl font-black fill-slate-900"
-          style={{ fontSize: "24px" }}
-        >
-          {show ? (normalizedValue * 100).toFixed(1) : 0}%
-        </text>
-      </svg>
-      <div className="mt-[-10px] flex flex-col items-center">
-        <span
-          className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-            normalizedValue < 0.55
-              ? "bg-slate-100 text-slate-500"
-              : normalizedValue < 0.75
-              ? "bg-amber-50 text-amber-600"
-              : "bg-emerald-50 text-emerald-600"
-          }`}
-        >
-          {getLabel(normalizedValue)}
-        </span>
-      </div>
-    </div>
-  );
-};
-
-const PredictionSection = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [showResult, setShowResult] = useState(false);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    setShowResult(false);
-
-    const startTime = Date.now();
-
-    try {
-      if (USE_MOCK_DATA) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        // Generasikan variasi acak realistis untuk simulasi interaktif
-        const isUp = Math.random() > 0.45;
-        const confidence = parseFloat((0.72 + Math.random() * 0.20).toFixed(2));
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const targetDateStr = tomorrow.toISOString().split("T")[0];
-
-        setData({
-          direction: isUp ? "UP" : "DOWN",
-          confidence_level: confidence,
-          target_date: targetDateStr,
-        });
-        setLoading(false);
-        setTimeout(() => setShowResult(true), 50);
-        return;
-      }
-
-      const api_url = "http://127.0.0.1:5000/api/predict/latest";
-      const response = await fetch(api_url, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (!response.ok) throw new Error("Gagal mengambil data");
-      const result = await response.json();
-
-      const duration = Date.now() - startTime;
-      const minimalDelay = 2000;
-      const remainingDelay = Math.max(0, minimalDelay - duration);
-
-      setTimeout(() => {
-        setData(result.data);
-        setLoading(false);
-        setTimeout(() => setShowResult(true), 50);
-      }, remainingDelay);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
+    // Jika waktu saat ini sudah lewat jam 07:00 WIB, target bergeser ke jam 07:00 WIB besok
+    if (now.getHours() >= 7) {
+      target.setDate(target.getDate() + 1);
     }
+
+    // Waktu acuan adalah jam 07:00 WIB sehari sebelum waktu target
+    const acuan = new Date(target);
+    acuan.setDate(acuan.getDate() - 1);
+
+    setTargetTime(target);
+    setAcuanTime(acuan);
+
+    // 2. Interval Hitung Mundur Realtime
+    const calculateTimeLeft = () => {
+      const difference = target.getTime() - Date.now();
+
+      if (difference > 0) {
+        setTimeLeft({
+          hours: Math.floor(difference / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        });
+      } else {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/prediction_result.json").then((res) => {
+        if (!res.ok) throw new Error("Gagal mengambil prediction_result.json");
+        return res.json();
+      }),
+      fetch("/prediction_history.json").then((res) => {
+        if (!res.ok) throw new Error("Gagal mengambil prediction_history.json");
+        return res.json();
+      }),
+    ])
+      .then(([latestRes, historyRes]) => {
+        if (latestRes.status === "success" && latestRes.data) {
+          setLatestPrediction(latestRes.data);
+        }
+        setHistoryData(historyRes || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Gagal mengambil data dari folder public:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Formatter Tanggal WIB
+  const formatDateWIB = (dateObj) => {
+    if (!dateObj || isNaN(dateObj.getTime())) return "-";
+    const formatted = new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }).format(dateObj);
+
+    return `${formatted.replace(".", ":")} WIB`;
   };
 
+  const formatCurrency = (val) =>
+    val !== undefined && val !== null
+      ? `$${val.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`
+      : "-";
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="text-slate-500 font-medium">Memuat dashboard...</p>
+      </div>
+    );
+  }
+
+  const isUp =
+    latestPrediction?.direction === "up" ||
+    latestPrediction?.prediction_direction === "up";
+
   return (
-    <div className="flex justify-center items-center p-6 md:p-10 bg-white min-h-[350px] w-full rounded-3xl border border-slate-100 shadow-sm">
-      <div className="relative w-full max-w-4xl flex flex-col items-center justify-center">
-        {/* ================= ELEMEN 1: TOMBOL PREDIKSI ================= */}
-        {!showResult && (
-          <div
-            className={`flex flex-col items-center transition-all duration-700 ease-in-out transform ${
-              loading ? "opacity-100 scale-100" : "opacity-100 scale-100"
-            }`}
-          >
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="group relative w-64 h-16 bg-blue-600 text-white text-sm font-bold rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-80 uppercase tracking-widest overflow-hidden"
-            >
-              <div className="flex items-center justify-center gap-3">
-                {loading ? (
-                  <>
-                    <Zap className="animate-spin text-blue-200" size={20} />
-                    <span>Menganalisis...</span>
-                  </>
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-12">
+        <div className="md:col-span-7 bg-[#eef7f2] p-6 flex flex-col justify-between">
+          <div>
+            <p className="text-sm text-slate-600 mb-3">
+              Model memprediksi closing berikutnya akan
+            </p>
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-[#10b981] flex items-center justify-center text-white">
+                {isUp ? (
+                  <ArrowUp className="w-6 h-6 stroke-[2.5]" />
                 ) : (
-                  <>
-                    <Zap size={20} className="group-hover:scale-125 transition" />
-                    <span>Lakukan Prediksi</span>
-                  </>
+                  <ArrowDown className="w-6 h-6 stroke-[2.5]" />
                 )}
               </div>
-            </button>
-            {error && <p className="text-red-500 text-[10px] mt-4 font-bold uppercase tracking-widest">{error}</p>}
-          </div>
-        )}
-
-        {/* ================= ELEMEN 2: HASIL PREDIKSI (SIDE-BY-SIDE) ================= */}
-        {data && !loading && showResult && (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center animate-in fade-in zoom-in-95 duration-1000">
-            {/* Left Column: Result & Direction */}
-            <div className="text-center md:text-left space-y-4">
-              <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 px-1">
-                  Hasil Analisis XGBoost
-                </p>
-                <h2
-                  className={`text-5xl md:text-6xl font-black tracking-tighter uppercase leading-none ${
-                    data.direction.toUpperCase() === "UP" ? "text-emerald-500" : "text-rose-500"
-                  }`}
-                >
-                  Bitcoin Diprediksi {data.direction.toUpperCase() === "UP" ? "NAIK" : "TURUN"}
-                </h2>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-sm font-bold text-slate-700 leading-snug">
-                  Harga diperkirakan {data.direction.toUpperCase() === "UP" ? "lebih tinggi" : "lebih rendah"} saat penutupan besok pagi (07:00 WIB) dibanding pagi ini.
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                  <span className="text-[9px] font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-wider">
-                    Target (UTC): {data.target_date}
-                  </span>
-                  <span className="text-[9px] font-bold bg-blue-50 text-blue-500 px-3 py-1 rounded-full uppercase tracking-wider">
-                    Market Close UTC 00:00
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Gauge & Info */}
-            <div className="flex flex-col items-center md:items-end gap-6 text-right">
-              <div className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 w-full max-w-[320px] flex flex-col items-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                  Tingkat Keyakinan
-                </p>
-                <GaugeChart value={data.confidence_level} show={showResult} />
-                
-                {/* Info Box */}
-                <div className="mt-8 bg-white p-4 rounded-2xl border border-slate-100 text-left">
-                  <div className="flex items-center gap-2 mb-2">
-                    <LucideInfo className="text-blue-400" size={14} />
-                    <span className="text-[10px] font-black text-slate-900 uppercase">Interpretasi</span>
-                  </div>
-                  <p className="text-[9px] text-slate-500 leading-relaxed">
-                    Angka ini menunjukkan seberapa mirip pola market saat ini dengan ribuan skenario historis yang telah dipelajari model. Semakin besar, semakin kuat sinyalnya.
-                  </p>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => setShowResult(false)}
-                className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition flex items-center gap-2 pr-4 mr-10"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                Prediksi Ulang
-              </button>
+              <span className="text-4xl font-extrabold text-[#065f46]">
+                {isUp ? "Naik" : "Turun"}
+              </span>
             </div>
           </div>
-        )}
+
+          <div className="bg-white/80 rounded-xl p-4 backdrop-blur-sm border border-emerald-100/50">
+            <p className="text-xs text-slate-500 mb-1">
+              Dibanding closing acuan :
+              <span className="font-semibold text-slate-700 ml-1">
+                {formatDateWIB(acuanTime)}
+              </span>
+            </p>
+            <p className="text-2xl font-bold text-slate-800">
+              {latestPrediction?.previous_close
+                ? formatCurrency(latestPrediction.previous_close)
+                : "$77,490.12"}
+            </p>
+          </div>
+        </div>
+
+        <div className="md:col-span-5 p-6 flex flex-col justify-between bg-white border-t md:border-t-0 md:border-l border-slate-100">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-slate-500">
+                Closing berikutnya :
+                <span className="font-semibold text-slate-700 ml-1">
+                  {formatDateWIB(targetTime)}
+                </span>
+              </span>
+            </div>
+            <div className="text-3xl font-bold text-slate-300 tracking-wider mb-2">
+              $ —
+            </div>
+            <p className="text-[14px] text-slate-400 leading-relaxed mb-6">
+              Harga closing belum ada. Kolom ini terisi otomatis saat waktu
+              closing tercapai.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100">
+            <p className="text-xs text-slate-500 mb-1">
+              Closing berikutnya terjadi dalam
+            </p>
+            <p className="text-2xl font-extrabold text-slate-800 mb-1">
+              {timeLeft.hours} jam {timeLeft.minutes} menit
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export default PredictionSection;
+}

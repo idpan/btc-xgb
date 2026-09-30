@@ -1,13 +1,17 @@
 @import "tailwindcss";
-/* src/index.css atau src/globals.css */
+
 @layer utilities {
-  /* Memaksa kelas text-xs, text-sm, dan arbitrary text-[Xpx] menjadi 16px */
-  .text-xs,
-  .text-sm,
-  [class*="text-[8px]"],
-  [class*="text-[11px]"],
-  [class*="text-[10px]"] {
-    font-size: 1rem !important; /* 16px */
-    line-height: 1.5rem !important;
+  .bg-theme-sidebar {
+    background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+  }
+  .bg-theme-primary {
+    background-color: #4e73df;
+  }
+  .text-theme-primary {
+    color: #4e73df;
+  }
+  .border-theme-primary {
+    border-color: #4e73df;
   }
 }
+
