@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
-import PredictionSection from "../components/PredictionSection";
-import Tabs from "../components/ui/Tabs";
-import FeaturePredictionCurrent from "../pages/FeaturePredictionCurrent";
-import PredictionBreakdown from "../components/PredictionBreakdown";
-import DecisionTree from "../components/DecisionTree";
+import PredictionSection from "../../components/PredictionSection";
+import Tabs from "../../components/ui/Tabs";
+import FeaturePredictionCurrent from "../../pages/FeaturePredictionCurrent";
+import PredictionBreakdown from "../../components/PredictionBreakdown";
+import DecisionTree from "../../components/DecisionTree";
 
-export default function TodayPrediction({}) {
+export default function HistoryResult({}) {
   const [features, setfeatures] = useState([]);
   const [trees, setTrees] = useState([]);
   const [summary, setSummary] = useState({});
   useEffect(() => {
-    fetch("/predictions/today.json")
+    fetch("/predictions/byDate.json")
       .then((res) => res.json())
       .then((data) => {
+        console.log(data);
         setfeatures(data.data.features);
         setTrees(data.data.trees);
         setSummary(data.data.summary);

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "pred-20260922",
+    "date": "22-09-2026",
+    "prediction_direction": "up",
+    "actual_direction": "down",
+    "prediction_status": "wrong",
+    "closing_price": 86198.05,
+    "next_closing_price": 84292.74
+  },
+  {
+    "id": "pred-20260921",
+    "date": "21-09-2026",
+    "prediction_direction": "up",
+    "actual_direction": "up",
+    "prediction_status": "correct",
+    "closing_price": 86576.95,
+    "next_closing_price": 86198.05
+  },
+  {
+    "id": "pred-20260920",
+    "date": "20-09-2026",
+    "prediction_direction": "down",
+    "actual_direction": "up",
+    "prediction_status": "wrong",
+    "closing_price": 80458.82,
+    "next_closing_price": 86576.95
+  }
+]

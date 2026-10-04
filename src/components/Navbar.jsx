@@ -1,18 +1,11 @@
 import { getUserRole } from "../utils/auth";
 
-export default function Navbar({ title = "Dashboard" }) {
+export default function Navbar() {
   const role = getUserRole() || "admin";
 
   return (
     <header className="bg-white border-b border-slate-200/80 h-16 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-      <div className="flex items-center gap-3">
-        <span className="text-slate-400 text-sm">
-          <i className="fa-solid fa-layer-group text-slate-400"></i>
-        </span>
-        <h2 className="text-base font-bold text-slate-800 tracking-tight">
-          {title}
-        </h2>
-      </div>
+      <div className="flex items-center gap-3"></div>
 
       <div className="flex items-center gap-4">
         {/* User Badge / Profile */}

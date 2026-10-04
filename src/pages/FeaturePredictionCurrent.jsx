@@ -1,5 +1,4 @@
 import { ListFilter } from "lucide-react";
-import { FEATURE_DATA } from "../data/feature";
 export default function FeaturePredictionCurrent({ data }) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
@@ -35,13 +34,12 @@ export default function FeaturePredictionCurrent({ data }) {
               <th className="py-2.5 px-4 border-r border-indigo-500/50">
                 NILAI AKTUAL
               </th>
-              <th className="py-2.5 px-4 text-right">KONTRIBUSI SHAP</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-200 bg-white">
             {data.map((item, idx) => {
-              const isPositif = item.kontribusi >= 0;
+              // const isPositif = item.kontribusi >= 0;
 
               return (
                 <tr
@@ -55,25 +53,12 @@ export default function FeaturePredictionCurrent({ data }) {
 
                   {/* Nama Fitur */}
                   <td className="py-2 px-4 font-semibold text-slate-700 border-r border-slate-100">
-                    {item.fitur}
+                    {item.name}
                   </td>
 
                   {/* Nilai Eksisting / Aktual */}
                   <td className="py-2 px-4 text-slate-700 font-mono border-r border-slate-100">
-                    {item.nilai}
-                  </td>
-
-                  {/* Kontribusi SHAP + Mini Visual Bar */}
-                  <td className="py-2 px-4 text-right font-mono font-bold">
-                    {/* Angka Kontribusi */}
-                    <span
-                      className={
-                        isPositif ? "text-emerald-600" : "text-rose-600"
-                      }
-                    >
-                      {isPositif ? "+" : ""}
-                      {item.kontribusi.toFixed(4).replace(".", ",")}
-                    </span>
+                    {item.value}
                   </td>
                 </tr>
               );

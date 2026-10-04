@@ -51,10 +51,8 @@ function Langkah({ no, judul, nilai, catatan, sorot, children }) {
 /* ---------- Komponen Utama Reusable ---------- */
 export default function PredictionBreakdown({
   pohon = [],
-  baseScore = 0.5,
-  onLihatPohon,
+  baseScore,
   judulHalaman = "Rincian Prediksi",
-  customHeader = null, // Slot opsional jika ingin menyisipkan Filter Tanggal / Controller Tambahan
 }) {
   const [sorotAkhir, setSorotAkhir] = useState(false);
   const [infoRumus, setInfoRumus] = useState(false);
@@ -84,7 +82,6 @@ export default function PredictionBreakdown({
       {/* Header Halaman & Optional Controller (misal: Date Picker) */}
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold">{judulHalaman}</h1>
-        {customHeader}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[7fr_3fr] lg:items-start">
@@ -159,19 +156,15 @@ export default function PredictionBreakdown({
                 <th className="w-16 px-3 py-3 text-left border-r border-blue-400/40">
                   Pohon
                 </th>
-                <th
-                  className="px-3 py-3 text-right border-r border-blue-400/40"
-                  colSpan={2}
-                >
+                <th className="w-16 px-3 py-3 text-right opacity-80 border-r border-blue-400/40">
+                  Leaf ID
+                </th>
+                <th className="px-3 py-3 text-right border-r border-blue-400/40">
                   Leaf score
                 </th>
                 <th className="px-3 py-3 text-right border-r border-blue-400/40">
                   Margin kumulatif
                 </th>
-                <th className="w-16 px-3 py-3 text-right opacity-80 border-r border-blue-400/40">
-                  Leaf
-                </th>
-                <th className="w-24 px-3 py-3" />
               </tr>
             </thead>
 
@@ -202,10 +195,9 @@ export default function PredictionBreakdown({
                     <td className="px-3 py-2 tabular-nums text-gray-500">
                       {p.id}
                     </td>
-                    <td className="w-28 px-3 py-2">
-                      <div className="flex justify-end">
-                        <BarSkor nilai={p.leafScore} maks={maks} />
-                      </div>
+
+                    <td className="px-3 py-2 text-right tabular-nums text-gray-400">
+                      {p.leafId}
                     </td>
                     <td
                       className={`w-24 px-3 py-2 text-right tabular-nums font-semibold ${
@@ -220,19 +212,6 @@ export default function PredictionBreakdown({
                       }`}
                     >
                       {angka(p.kumulatif)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-gray-400">
-                      {p.leafId}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {onLihatPohon && (
-                        <button
-                          onClick={() => onLihatPohon(p.id)}
-                          className="text-xs text-blue-700 hover:underline font-medium"
-                        >
-                          Lihat pohon
-                        </button>
-                      )}
                     </td>
                   </tr>
                 );

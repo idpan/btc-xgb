@@ -1,52 +1,52 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ArrowUp, ArrowDown } from "lucide-react";
-import Tabs from "../components/ui/Tabs";
+import { ArrowUp, ArrowDown, CheckCircle2, AlertTriangle } from "lucide-react";
 
-export default function PredictionSection() {
-  const [historyData, setHistoryData] = useState([]);
-  const [latestPrediction, setLatestPrediction] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function PredictionSection({
+  referenceClosingPrice,
+  direction = "up",
+  nextClosingPrice = null,
+  nextClosingDate = null,
+  referenceClosingDate = null,
+  isCorrect = null,
+}) {
+  // State lokal khusus untuk kalkulasi countdown realtime
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
+  const [computedTarget, setComputedTarget] = useState(null);
+  const [computedAcuan, setComputedAcuan] = useState(null);
 
-  // State untuk Waktu & Countdown Realtime
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-  const [targetTime, setTargetTime] = useState(null);
-  const [acuanTime, setAcuanTime] = useState(null);
-
+  // Kalkulasi/Format Waktu Target & Acuan
   useEffect(() => {
-    // 1. Tentukan Waktu Closing Berikutnya (Pukul 07:00 WIB)
-    const now = new Date();
-    const target = new Date();
-    target.setHours(7, 0, 0, 0);
+    // Tentukan waktu target (dari prop atau default 07:00 WIB berikutnya)
+    const target = nextClosingDate
+      ? new Date(nextClosingDate)
+      : (() => {
+          const t = new Date();
+          t.setHours(7, 0, 0, 0);
+          if (new Date().getHours() >= 7) t.setDate(t.getDate() + 1);
+          return t;
+        })();
 
-    // Jika waktu saat ini sudah lewat jam 07:00 WIB, target bergeser ke jam 07:00 WIB besok
-    if (now.getHours() >= 7) {
-      target.setDate(target.getDate() + 1);
-    }
+    // Tentukan waktu acuan (dari prop atau default 1 hari sebelum target)
+    const acuan = referenceClosingDate
+      ? new Date(referenceClosingDate)
+      : (() => {
+          const a = new Date(target);
+          a.setDate(a.getDate() - 1);
+          return a;
+        })();
 
-    // Waktu acuan adalah jam 07:00 WIB sehari sebelum waktu target
-    const acuan = new Date(target);
-    acuan.setDate(acuan.getDate() - 1);
+    setComputedTarget(target);
+    setComputedAcuan(acuan);
 
-    setTargetTime(target);
-    setAcuanTime(acuan);
-
-    // 2. Interval Hitung Mundur Realtime
     const calculateTimeLeft = () => {
       const difference = target.getTime() - Date.now();
-
       if (difference > 0) {
         setTimeLeft({
           hours: Math.floor(difference / (1000 * 60 * 60)),
           minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((difference % (1000 * 60)) / 1000),
         });
       } else {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        setTimeLeft({ hours: 0, minutes: 0 });
       }
     };
 
@@ -54,42 +54,18 @@ export default function PredictionSection() {
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [nextClosingDate, referenceClosingDate]);
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/prediction_result.json").then((res) => {
-        if (!res.ok) throw new Error("Gagal mengambil prediction_result.json");
-        return res.json();
-      }),
-      fetch("/prediction_history.json").then((res) => {
-        if (!res.ok) throw new Error("Gagal mengambil prediction_history.json");
-        return res.json();
-      }),
-    ])
-      .then(([latestRes, historyRes]) => {
-        if (latestRes.status === "success" && latestRes.data) {
-          setLatestPrediction(latestRes.data);
-        }
-        setHistoryData(historyRes || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Gagal mengambil data dari folder public:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  // Formatter Tanggal WIB
+  // Formatters Helper
   const formatDateWIB = (dateObj) => {
-    if (!dateObj || isNaN(dateObj.getTime())) return "-";
+    if (!dateObj || isNaN(new Date(dateObj).getTime())) return "-";
     const formatted = new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
       timeZone: "Asia/Jakarta",
-    }).format(dateObj);
+    }).format(new Date(dateObj));
 
     return `${formatted.replace(".", ":")} WIB`;
   };
@@ -102,85 +78,181 @@ export default function PredictionSection() {
         })}`
       : "-";
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="text-slate-500 font-medium">Memuat dashboard...</p>
-      </div>
-    );
+  // ==========================================
+  // EVALUASI LOGIKA TAMPILAN BERBASIS PROPS
+  // ==========================================
+
+  // 1. Arah Prediksi (Naik / Turun)
+  const isUp = direction === "up" || direction === "Naik";
+
+  // 2. Status Pending vs Selesai
+  // Otomatis berubah dari true -> false jika parent memperbarui nextClosingPrice dari null ke number
+  const isPending = nextClosingPrice === null || nextClosingPrice === undefined;
+
+  // 3. Status Prediksi Benar vs Salah
+  let isSuccess = false;
+  if (!isPending) {
+    if (isCorrect !== null && isCorrect !== undefined) {
+      isSuccess = isCorrect;
+    } else if (referenceClosingPrice) {
+      const isActualUp = nextClosingPrice > referenceClosingPrice;
+      isSuccess = isUp === isActualUp;
+    }
   }
 
-  const isUp =
-    latestPrediction?.direction === "up" ||
-    latestPrediction?.prediction_direction === "up";
+  // 4. Kalkulasi Selisih Harga & Persentase
+  let priceDiffFormatted = "";
+  let isDiffPositive = false;
+  if (!isPending && referenceClosingPrice) {
+    const diff = nextClosingPrice - referenceClosingPrice;
+    const percent = (diff / referenceClosingPrice) * 100;
+    isDiffPositive = diff >= 0;
+    const sign = isDiffPositive ? "+" : "-";
+    priceDiffFormatted = `${sign} $${Math.abs(diff).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} (${sign}${Math.abs(percent).toFixed(2)}%)`;
+  }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-      <div className="grid grid-cols-1 md:grid-cols-12">
-        <div className="md:col-span-7 bg-[#eef7f2] p-6 flex flex-col justify-between">
-          <div>
-            <p className="text-sm text-slate-600 mb-3">
-              Model memprediksi closing berikutnya akan
-            </p>
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-[#10b981] flex items-center justify-center text-white">
-                {isUp ? (
-                  <ArrowUp className="w-6 h-6 stroke-[2.5]" />
-                ) : (
-                  <ArrowDown className="w-6 h-6 stroke-[2.5]" />
-                )}
+    <>
+      <div className="max-w-2xl">
+        {/* GRID 2 PANEL */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-3">
+          {/* PANEL KIRI: PREDIKSI MODEL */}
+          <div className=" bg-white p-5 flex flex-col justify-between">
+            <div>
+              <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
+                <span className="block text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500 font-medium">
+                  Dibanding closing acuan : {formatDateWIB(computedAcuan)}
+                </span>
+                <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                  {formatCurrency(referenceClosingPrice)}
+                </span>
               </div>
-              <span className="text-4xl font-extrabold text-[#065f46]">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                Model memprediksi closing berikutnya akan
+              </p>
+            </div>
+
+            {/* Indicator Naik / Turun */}
+            <div
+              className={`flex items-center gap-2 ${
+                isUp
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-600 dark:text-rose-400"
+              }`}
+            >
+              <span
+                className={`p-1 border ${
+                  isUp
+                    ? "border-emerald-600/30 dark:border-emerald-400/30 bg-emerald-50 dark:bg-emerald-950/50"
+                    : "border-rose-600/30 dark:border-rose-400/30 bg-rose-50 dark:bg-rose-950/50"
+                }`}
+              >
+                {isUp ? (
+                  <ArrowUp className="w-5 h-5 stroke-[2]" />
+                ) : (
+                  <ArrowDown className="w-5 h-5 stroke-[2]" />
+                )}
+              </span>
+              <span className="text-2xl font-bold tracking-tight">
                 {isUp ? "Naik" : "Turun"}
               </span>
             </div>
           </div>
 
-          <div className="bg-white/80 rounded-xl p-4 backdrop-blur-sm border border-emerald-100/50">
-            <p className="text-xs text-slate-500 mb-1">
-              Dibanding closing acuan :
-              <span className="font-semibold text-slate-700 ml-1">
-                {formatDateWIB(acuanTime)}
-              </span>
-            </p>
-            <p className="text-2xl font-bold text-slate-800">
-              {latestPrediction?.previous_close
-                ? formatCurrency(latestPrediction.previous_close)
-                : "$77,490.12"}
-            </p>
-          </div>
-        </div>
-
-        <div className="md:col-span-5 p-6 flex flex-col justify-between bg-white border-t md:border-t-0 md:border-l border-slate-100">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-slate-500">
-                Closing berikutnya :
-                <span className="font-semibold text-slate-700 ml-1">
-                  {formatDateWIB(targetTime)}
+          {/* PANEL KANAN: CLOSING AKTUAL */}
+          <div className=" bg-white p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Closing berikutnya
                 </span>
+                <span className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">
+                  {formatDateWIB(computedTarget)}
+                </span>
+              </div>
+
+              {/* Target Price ($ — vs $79,250.00) */}
+              <div
+                className={`my-2 ${
+                  isPending
+                    ? "text-2xl font-light text-neutral-300 dark:text-neutral-700"
+                    : "text-2xl font-bold tracking-tight text-neutral-900 dark:text-white"
+                }`}
+              >
+                {isPending ? "$ —" : formatCurrency(nextClosingPrice)}
+              </div>
+
+              {/* Sub-text Deskripsi */}
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 leading-relaxed mt-2">
+                {isPending
+                  ? "Harga closing belum ada. Kolom ini terisi otomatis saat waktu closing tercapai."
+                  : isDiffPositive
+                    ? "Harga closing telah tercapai dan berada di atas harga acuan."
+                    : "Harga closing telah tercapai dan berada di bawah harga acuan."}
+              </p>
+            </div>
+
+            {/* Stat Footer / Countdown */}
+            <div className="mt-6 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+              <span className="block text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                {isPending
+                  ? "Closing berikutnya terjadi dalam"
+                  : "Pergerakan Harga Aktual"}
+              </span>
+
+              <span
+                className={
+                  isPending
+                    ? "text-lg font-semibold text-neutral-800 dark:text-neutral-200"
+                    : `text-base font-bold ${
+                        isDiffPositive
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-400"
+                      }`
+                }
+              >
+                {isPending
+                  ? `${timeLeft.hours} jam ${timeLeft.minutes} menit`
+                  : priceDiffFormatted}
               </span>
             </div>
-            <div className="text-3xl font-bold text-slate-300 tracking-wider mb-2">
-              $ —
-            </div>
-            <p className="text-[14px] text-slate-400 leading-relaxed mb-6">
-              Harga closing belum ada. Kolom ini terisi otomatis saat waktu
-              closing tercapai.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-500 mb-1">
-              Closing berikutnya terjadi dalam
-            </p>
-            <p className="text-2xl font-extrabold text-slate-800 mb-1">
-              {timeLeft.hours} jam {timeLeft.minutes} menit
-            </p>
           </div>
         </div>
+
+        {/* BANNER HASIL (Tampil saat isPending = false) */}
+        {!isPending && (
+          <div
+            className={`bg-white dark:bg-neutral-900 border p-3 text-center ${
+              isSuccess
+                ? "border-blue-500/40 dark:border-blue-500/30"
+                : "border-amber-500/40 dark:border-amber-500/30"
+            }`}
+          >
+            <span
+              className={`text-md font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 ${
+                isSuccess
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-amber-600 dark:text-amber-400"
+              }`}
+            >
+              {isSuccess ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 inline" />
+                  <span>Hasil: Prediksi Benar</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 inline" />
+                  <span>Hasil: Prediksi Salah</span>
+                </>
+              )}
+            </span>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

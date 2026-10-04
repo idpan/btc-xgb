@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { PredictionTable } from "../components/dashboard/PredictionTable";
-import { StatCard } from "../components/dashboard/StatCard";
-import NextPredictionCard from "../components/dashboard/NextPredictionCard";
+import { PredictionTable } from "../../components/dashboard/PredictionTable";
 import { Search, Filter, History as HistoryIcon } from "lucide-react";
 
 export default function History() {
@@ -11,7 +9,7 @@ export default function History() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    fetch("/prediction_history.json")
+    fetch("/predictions/history.json")
       .then((res) => {
         if (!res.ok)
           throw new Error("Gagal mengambil data prediction_history.json");
@@ -67,12 +65,11 @@ export default function History() {
     );
 
   return (
-    <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8 p-6 pb-20">
+    <>
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <HistoryIcon className="text-blue-600" size={32} />
             RIWAYAT PREDIKSI
           </h1>
           <p className="text-slate-500 font-medium">
@@ -126,6 +123,6 @@ export default function History() {
           <PredictionTable data={filteredData} />
         </div>
       </div>
-    </div>
+    </>
   );
 }

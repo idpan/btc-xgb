@@ -172,7 +172,7 @@ export const PredictionTable = ({ data = [] }) => {
                     </span>
                   </td>
                   <td className="p-3.5 border-r border-slate-200 font-semibold text-slate-800">
-                    <Link to="/prediction-test/hasil">
+                    <Link to="/prediction-history/hasil">
                       <button className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-indigo text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
                         <Eye className="w-3.5 h-3.5" />
                         Detail

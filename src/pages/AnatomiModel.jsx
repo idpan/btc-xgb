@@ -120,7 +120,7 @@ export default function AnatomiModel() {
                   name={`Batch_${String(b).padStart(2, "0")}`}
                   meta={`Tree_${String((b - 1) * BATCH_SIZE + 1).padStart(
                     3,
-                    "0"
+                    "0",
                   )}–${String(b * BATCH_SIZE).padStart(3, "0")}`}
                   chevron
                   onClick={() => setPath([b])}
@@ -247,11 +247,11 @@ function TreeModal({ tree, onClose }) {
         </div>
         <div className="mt-3 bg-slate-800/60 rounded-lg px-4 py-3 text-[11px] text-slate-400 leading-relaxed">
           Gambar asli dari{" "}
-          <span className="font-mono">xgboost.to_graphviz()</span> — {tree.nodes}{" "}
-          node ({tree.leaves} di antaranya leaf). Struktur ini tetap, terlepas
-          dari data mana pun yang diprediksi; leaf mana yang terpakai untuk
-          satu prediksi ditentukan oleh nilai fitur input saat itu melewati
-          tiap split.
+          <span className="font-mono">xgboost.to_graphviz()</span> —{" "}
+          {tree.nodes} node ({tree.leaves} di antaranya leaf). Struktur ini
+          tetap, terlepas dari data mana pun yang diprediksi; leaf mana yang
+          terpakai untuk satu prediksi ditentukan oleh nilai fitur input saat
+          itu melewati tiap split.
         </div>
       </div>
     </>

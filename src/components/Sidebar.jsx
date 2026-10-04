@@ -13,12 +13,6 @@ export default function Sidebar() {
       title: null, // Top item
       items: [
         {
-          id: "dashboard",
-          label: "Dashboard",
-          path: "/dashboard",
-          icon: "fa-solid fa-house",
-        },
-        {
           id: "today-prediction",
           label: "Prediksi Hari Ini",
           path: "/prediction-today",
@@ -30,12 +24,12 @@ export default function Sidebar() {
           path: "/prediction-history",
           icon: "fa-solid fa-clock-rotate-left",
         },
-        {
-          id: "test-prediction",
-          label: "Tes Prediksi",
-          path: "/prediction-test",
-          icon: "fa-solid fa-play",
-        },
+        // {
+        //   id: "test-prediction",
+        //   label: "Tes Prediksi",
+        //   path: "/prediction-test",
+        //   icon: "fa-solid fa-play",
+        // },
         {
           id: "anatomi-model",
           label: "Spesifikasi Model",
@@ -44,72 +38,6 @@ export default function Sidebar() {
         },
       ],
     },
-    // {
-    //   title: "MASTER DATA",
-    //   items: [
-    //     {
-    //       id: "feature",
-    //       label: "Data Feature",
-    //       path: "/feature",
-    //       icon: "fa-solid fa-table-cells",
-    //       adminOnly: true,
-    //     },
-    //     {
-    //       id: "history",
-    //       label: "History Data",
-    //       path: "/history",
-    //       icon: "fa-solid fa-clock-rotate-left",
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "PREDIKSI HARI INI",
-    //   adminOnly: true,
-    //   items: [
-    //     {
-    //       id: "today-calculation",
-    //       label: "Rincian Prediksi",
-    //       path: "/today-prediction/calculation",
-    //       icon: "fa-solid fa-calculator",
-    //     },
-    //     {
-    //       id: "today-feature",
-    //       label: "Feature Hari Ini",
-    //       path: "/today-prediction/feature",
-    //       icon: "fa-solid fa-list-check",
-    //     },
-    //     {
-    //       id: "today-trees",
-    //       label: "Pohon Prediksi",
-    //       path: "/today-prediction/trees",
-    //       icon: "fa-solid fa-network-wired",
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "MODEL & INFERENSI",
-    //   adminOnly: true,
-    //   items: [
-    //     {
-    //       id: "pred-run-page",
-    //       label: "Uji Inferensi",
-    //       path: "/pred-run-page",
-    //       icon: "fa-solid fa-play",
-    //     },
-    //     {
-    //       id: "anatomi-model",
-    //       label: "Spesifikasi Model",
-    //       path: "/anatomi-model",
-    //       icon: "fa-solid fa-cubes",
-    //     },
-    //     {
-    //       id: "trees",
-    //       label: "Pohon Keputusan",
-    //       path: "/trees",
-    //       icon: "fa-solid fa-diagram-project",
-    //     },
-    //   ],
-    // },
   ];
 
   if (role === "admin") {
