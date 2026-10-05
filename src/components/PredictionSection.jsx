@@ -1,1 +1,1 @@
-export { default } from "./charts/TreeViewer";
+export { default } from "./anatomy/AnatomiModel";

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, History as HistoryIcon } from "lucide-react";
-import { PredictionTable } from "../../components/dashboard/PredictionTable";
+import { Search, Filter } from "lucide-react";
+import PredictionTable from "../../components/dashboard/PredictionTable";
 
 export default function History() {
   const [historyData, setHistoryData] = useState([]);

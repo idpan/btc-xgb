@@ -1,1 +1,1 @@
-export { default } from "./auth/Login";
+export { default } from "./prediction/FeaturePredictionCurrent";

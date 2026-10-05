@@ -1,1 +1,1 @@
-export { default } from "./prediction/PredictionBreakdown";
+export { default } from "./prediction/TodayPrediction";

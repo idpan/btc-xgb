@@ -1,1 +1,1 @@
-export { default } from "./layout/Navbar";
+export { default } from "./prediction/PredictionBreakdown";

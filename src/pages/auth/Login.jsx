@@ -1,184 +1,94 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { logout, getUserRole } from "../../utils/auth";
 
-const angka = (n, digit = 4) =>
-  new Intl.NumberFormat("id-ID", {
-    minimumFractionDigits: digit,
-    maximumFractionDigits: digit,
-  }).format(n);
+export default function Sidebar() {
+  const location = useLocation();
+  const currentPath = location.pathname;
+  const role = getUserRole();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-const bertanda = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + angka(Math.abs(n));
-const sigmoid = (x) => 1 / (1 + Math.exp(-x));
-const logit = (p) => Math.log(p / (1 - p));
+  const items = [
+    { id: "today", label: "Prediksi Hari Ini", path: "/prediction-today", icon: "fa-solid fa-calendar-check" },
+    { id: "history", label: "Riwayat Prediksi", path: "/prediction-history", icon: "fa-solid fa-clock-rotate-left" },
+    { id: "anatomy", label: "Spesifikasi Model", path: "/anatomi-model", icon: "fa-solid fa-cubes" },
+  ];
 
-function Langkah({ no, judul, nilai, catatan, sorot, children }) {
-  return (
-    <li className="relative pl-9">
-      <span className="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
-        {no}
-      </span>
-      <div className={`rounded-md px-2 py-1 transition-colors ${sorot ? "bg-amber-100" : ""}`}>
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm text-gray-600">{judul}</span>
-          <span className="tabular-nums text-base font-semibold">{nilai}</span>
-        </div>
-        {catatan && <p className="mt-0.5 text-xs text-gray-500">{catatan}</p>}
-        {children}
-      </div>
-    </li>
-  );
-}
-
-export default function PredictionBreakdown({
-  pohon = [],
-  baseScore,
-  judulHalaman = "Rincian Prediksi",
-}) {
-  const [sorotAkhir, setSorotAkhir] = useState(false);
-  const [infoRumus, setInfoRumus] = useState(false);
-  const [kartuTerbuka, setKartuTerbuka] = useState(true);
-
-  const baseMargin = useMemo(() => logit(baseScore), [baseScore]);
-
-  const { baris, totalLeaf } = useMemo(() => {
-    let kumulatif = baseMargin;
-    let total = 0;
-    const hasil = pohon.map((p) => {
-      kumulatif += p.leafScore;
-      total += p.leafScore;
-      return { ...p, kumulatif };
-    });
-    return { baris: hasil, totalLeaf: total };
-  }, [pohon, baseMargin]);
-
-  const marginAkhir = baseMargin + totalLeaf;
-  const probabilitas = sigmoid(marginAkhir);
-  const naik = probabilitas >= 0.5;
+  if (role === "admin") {
+    items.push({ id: "users", label: "Manajemen User", path: "/users", icon: "fa-solid fa-user-gear" });
+  }
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 text-gray-900">
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold">{judulHalaman}</h1>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[7fr_3fr] lg:items-start">
-        <aside className="order-first rounded-lg border border-gray-300 bg-white lg:order-last lg:sticky lg:top-4">
-          <button
-            onClick={() => setKartuTerbuka((b) => !b)}
-            aria-expanded={kartuTerbuka}
-            className="flex w-full items-center justify-between px-4 py-3 text-left lg:pointer-events-none"
-          >
-            <span className="font-semibold">Perhitungan prediksi</span>
-            <span className="text-sm text-gray-500 lg:hidden">
-              {kartuTerbuka ? "Tutup" : "Buka"}
-            </span>
-          </button>
-
-          <div className={`${kartuTerbuka ? "block" : "hidden"} px-4 pb-4 lg:block`}>
-            <ol className="relative space-y-3 before:absolute before:left-3 before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-gray-300">
-              <Langkah
-                no={1}
-                judul="Base margin"
-                nilai={angka(baseMargin)}
-                catatan={`logit dari base score ${angka(baseScore, 2)}`}
-              />
-              <Langkah
-                no={2}
-                judul={`Total leaf score (${pohon.length} pohon)`}
-                nilai={bertanda(totalLeaf)}
-              />
-              <Langkah
-                no={3}
-                judul="Margin akhir (1 + 2)"
-                nilai={angka(marginAkhir)}
-                catatan="Sama dengan margin kumulatif di pohon terakhir."
-                sorot={sorotAkhir}
-              />
-              <Langkah
-                no={4}
-                judul="Probabilitas naik (sigmoid)"
-                nilai={`${angka(probabilitas * 100, 2)}%`}
-              >
-                <button
-                  onClick={() => setInfoRumus((b) => !b)}
-                  aria-expanded={infoRumus}
-                  className="mt-0.5 text-xs text-blue-700 underline"
-                >
-                  {infoRumus ? "Sembunyikan rumus" : "Lihat rumus"}
-                </button>
-                {infoRumus && (
-                  <p className="mt-1 rounded bg-gray-100 px-2 py-1 font-mono text-xs">
-                    1 / (1 + e^(−margin))
-                  </p>
-                )}
-              </Langkah>
-              <Langkah
-                no={5}
-                judul="Prediksi"
-                nilai={naik ? "Naik" : "Turun"}
-                catatan="Naik bila probabilitas ≥ 50%."
-              />
-            </ol>
+    <aside
+      className={`h-screen sticky top-0 flex-shrink-0 transition-all duration-300 z-40 select-none flex flex-col justify-between text-white shadow-xl ${
+        isCollapsed ? "w-20" : "w-64"
+      }`}
+      style={{ background: "linear-gradient(180deg, #4e73df 10%, #224abe 100%)" }}
+    >
+      <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/15">
+          <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white shadow-inner flex-shrink-0">
+            <i className="fa-solid fa-database text-xl"></i>
           </div>
-        </aside>
+          {!isCollapsed && (
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base font-extrabold tracking-wider text-white uppercase leading-tight truncate">
+                BTC PREDICT
+              </h1>
+              <span className="text-[10px] font-semibold text-blue-100 opacity-80 block truncate">
+                SPK XGBoost v2.0
+              </span>
+            </div>
+          )}
+        </div>
 
-        <div className="max-h-[75vh] overflow-auto rounded-lg border border-gray-300 bg-white">
-          <table className="w-full min-w-[520px] border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-[#4e73df] text-white uppercase text-xs font-bold tracking-wider">
-              <tr>
-                <th className="w-16 px-3 py-3 text-left border-r border-blue-400/40">Pohon</th>
-                <th className="w-16 px-3 py-3 text-right opacity-80 border-r border-blue-400/40">Leaf ID</th>
-                <th className="px-3 py-3 text-right border-r border-blue-400/40">Leaf score</th>
-                <th className="px-3 py-3 text-right border-r border-blue-400/40">Margin kumulatif</th>
-              </tr>
-            </thead>
+        <div className="px-3 py-4 space-y-4 flex-1">
+          <nav className="space-y-1">
+            {items.map((item) => {
+              const isActive = currentPath === item.path;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  title={isCollapsed ? item.label : undefined}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                    isActive
+                      ? "bg-white/20 text-white font-bold shadow-xs border-l-4 border-white"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  } ${isCollapsed ? "justify-center px-0" : ""}`}
+                >
+                  <i
+                    className={`${item.icon} text-base ${
+                      isCollapsed ? "w-auto text-lg" : "w-5 text-center"
+                    } ${isActive ? "text-white" : "text-white/70"}`}
+                  ></i>
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-            <tbody>
-              <tr className="border-t border-gray-200 bg-gray-50">
-                <td className="px-3 py-2 text-gray-500" colSpan={3}>Base (logit base score)</td>
-                <td className="px-3 py-2 text-right tabular-nums">{angka(baseMargin)}</td>
-                <td colSpan={2} />
-              </tr>
+        <div className="p-3 border-t border-white/15 flex items-center justify-between">
+          {!isCollapsed && (
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 py-1.5 px-3 rounded-lg transition"
+            >
+              <i className="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          )}
 
-              {baris.map((p, i) => {
-                const terakhir = i === baris.length - 1;
-                return (
-                  <tr
-                    key={p.id}
-                    onMouseEnter={terakhir ? () => setSorotAkhir(true) : undefined}
-                    onMouseLeave={terakhir ? () => setSorotAkhir(false) : undefined}
-                    className="border-t border-gray-200 hover:bg-gray-50"
-                  >
-                    <td className="px-3 py-2 tabular-nums text-gray-500">{p.id}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-gray-400">{p.leafId}</td>
-                    <td
-                      className={`w-24 px-3 py-2 text-right tabular-nums font-semibold ${
-                        p.leafScore >= 0 ? "text-emerald-700" : "text-rose-700"
-                      }`}
-                    >
-                      {bertanda(p.leafScore)}
-                    </td>
-                    <td
-                      className={`px-3 py-2 text-right tabular-nums ${
-                        terakhir && sorotAkhir ? "bg-amber-100" : ""
-                      }`}
-                    >
-                      {angka(p.kumulatif)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-
-            <tfoot className="sticky bottom-0 z-10 bg-gray-900 text-white">
-              <tr>
-                <td colSpan={3} className="px-3 py-3 font-semibold">Total leaf score</td>
-                <td className="px-3 py-3 text-right tabular-nums font-semibold">{bertanda(totalLeaf)}</td>
-                <td colSpan={2} />
-              </tr>
-            </tfoot>
-          </table>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition shadow-xs mx-auto"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            <i className={`fa-solid ${isCollapsed ? "fa-chevron-right" : "fa-chevron-left"} text-xs`}></i>
+          </button>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

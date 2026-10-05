@@ -4,26 +4,26 @@ import {
   Route,
   Navigate,
   useLocation,
-  Outlet,
 } from "react-router-dom";
-import { getAuthToken, getUserRole } from "./utils/auth";
-import Sidebar from "./components/layout/Sidebar";
-import Navbar from "./components/layout/Navbar";
+import { getAuthToken, getUserRole } from "../utils/auth";
+import Sidebar from "../components/layout/Sidebar";
+import Navbar from "../components/layout/Navbar";
 
-import Login from "./pages/auth/Login";
-import UserManagement from "./pages/users/UserManagement";
-import AnatomiModel from "./pages/anatomy/AnatomiModel";
-import TodayPrediction from "./pages/prediction/TodayPrediction";
-import History from "./pages/prediction/History";
-import HistoryResult from "./pages/prediction/HistoryResult";
+import Login from "../pages/auth/Login";
+import UserManagement from "../pages/users/UserManagement";
+import AnatomiModel from "../pages/anatomy/AnatomiModel";
+import TodayPrediction from "../pages/prediction/TodayPrediction";
+import History from "../pages/prediction/History";
+import HistoryResult from "../pages/prediction/HistoryResult";
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const token = getAuthToken();
   const role = getUserRole();
 
   if (!token) return <Navigate to="/login" replace />;
-  if (adminOnly && role !== "admin")
+  if (adminOnly && role !== "admin") {
     return <Navigate to="/prediction-today" replace />;
+  }
 
   return children;
 }
@@ -58,52 +58,47 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/prediction-today" replace />} />
+
           <Route
             path="/prediction-today"
             element={
-              <ProtectedRoute adminOnly={true}>
+              <ProtectedRoute adminOnly>
                 <TodayPrediction />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/prediction-history"
             element={
               <ProtectedRoute>
-                <Outlet />
+                <History />
               </ProtectedRoute>
             }
-          >
-            <Route
-              path=""
-              element={
-                <ProtectedRoute>
-                  <History />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="hasil"
-              element={
-                <ProtectedRoute>
-                  <HistoryResult />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
+          />
+
+          <Route
+            path="/prediction-history/result"
+            element={
+              <ProtectedRoute>
+                <HistoryResult />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/anatomi-model"
             element={
-              <ProtectedRoute adminOnly={true}>
+              <ProtectedRoute adminOnly>
                 <AnatomiModel />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/users"
             element={
-              <ProtectedRoute adminOnly={true}>
+              <ProtectedRoute adminOnly>
                 <UserManagement />
               </ProtectedRoute>
             }

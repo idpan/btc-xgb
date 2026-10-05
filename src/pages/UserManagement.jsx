@@ -1,1 +1,1 @@
-export { default } from "./anatomy/AnatomiModel";
+export { default } from "./layout/Navbar";
